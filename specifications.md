@@ -14,9 +14,12 @@ AlpineBot.ch is a minimalist, AI-powered platform providing up-to-date informati
 
 ```mermaid
 graph TD
-    User[Public User] -->|HTTPS| CDN[Azure Front Door / CDN]
+    User[User] -->|HTTPS| CDN[Azure Front Door / CDN]
     CDN -->|Static Content| WebApp["Azure App Service (Frontend)"]
     WebApp -->|API Calls| Func["Azure Functions (Backend API)"]
+
+    User -.->|Auth| Google[Google Identity]
+    WebApp -.->|Validate Token| Google
 
     subgraph "Azure Switzerland North"
         Func -->|Identity| KV[Azure Key Vault]
@@ -25,6 +28,8 @@ graph TD
         Func -->|Completion| OpenAI["Azure OpenAI (GPT-4o)"]
         Admin[Admin User] -->|HTTPS| WebApp
     end
+
+    ExternalData[External Data Sources] -->|Ingest| Func
 
     GitHub[GitHub Actions] -->|Deploy| WebApp
     GitHub -->|Deploy| Func

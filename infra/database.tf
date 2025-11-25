@@ -61,16 +61,19 @@ resource "azurerm_key_vault_secret" "postgres_password" {
   name         = "postgres-admin-password"
   value        = random_password.postgres_password.result
   key_vault_id = azurerm_key_vault.main.id
+  depends_on   = [azurerm_role_assignment.current_user_secrets_officer]
 }
 
 resource "azurerm_key_vault_secret" "postgres_connection_string" {
   name         = "postgres-connection-string"
   value        = "host=${azurerm_postgresql_flexible_server.main.fqdn} port=5432 dbname=${azurerm_postgresql_flexible_server_database.main.name} user=${azurerm_postgresql_flexible_server.main.administrator_login} password=${random_password.postgres_password.result} sslmode=require"
   key_vault_id = azurerm_key_vault.main.id
+  depends_on   = [azurerm_role_assignment.current_user_secrets_officer]
 }
 
 resource "azurerm_key_vault_secret" "redis_connection_string" {
   name         = "redis-connection-string"
   value        = azurerm_redis_cache.main.primary_connection_string
   key_vault_id = azurerm_key_vault.main.id
+  depends_on   = [azurerm_role_assignment.current_user_secrets_officer]
 }

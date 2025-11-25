@@ -70,6 +70,32 @@ We take our environments seriously. No yodeling in the library.
 | **QA**   | `qa`   | Manual        | The testing grounds. Strict quality control. 🧐 |
 | **Prod** | `main` | Release Tag   | The summit. Pure, crisp, production air. 🏔️     |
 
+### 🔄 DevOps Pipeline
+
+```mermaid
+graph TD
+    subgraph "Development Flow"
+        Dev[Dev Branch] -->|Push| GHA_Dev[GitHub Actions: Dev]
+        GHA_Dev -->|Terraform Apply| Azure_Dev[Azure Dev Env]
+        GHA_Dev -->|Deploy Code| Azure_Dev
+    end
+
+    subgraph "QA Flow"
+        QA[QA Branch] -->|Manual Dispatch| GHA_QA[GitHub Actions: QA]
+        GHA_QA -->|Terraform Apply| Azure_QA[Azure QA Env]
+        GHA_QA -->|Deploy Code| Azure_QA
+    end
+
+    subgraph "Production Flow"
+        Main[Main Branch] -->|Release Tag| GHA_Prod[GitHub Actions: Prod]
+        GHA_Prod -->|Terraform Apply| Azure_Prod[Azure Prod Env]
+        GHA_Prod -->|Deploy Code| Azure_Prod
+    end
+
+    Dev -.->|Merge Request| QA
+    QA -.->|Merge Request| Main
+```
+
 ## 🤝 Contributing
 
 Want to help us reach new heights? Check out [CONTRIBUTING.md](CONTRIBUTING.md). We welcome pull requests, bug reports, and chocolate donations. 🍫

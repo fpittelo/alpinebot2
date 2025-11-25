@@ -27,6 +27,9 @@ graph TD
         Func -->|Caching| Redis[Azure Cache for Redis]
         Func -->|Completion| OpenAI["Azure OpenAI (GPT-4o)"]
         Admin[Admin User] -->|HTTPS| WebApp
+
+        WebApp -.->|Telemetry| AppInsights[Azure Application Insights]
+        Func -.->|Telemetry| AppInsights
     end
 
     ExternalData[External Data Sources] -->|Ingest| Func

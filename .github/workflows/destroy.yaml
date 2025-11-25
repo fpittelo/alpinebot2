@@ -57,6 +57,17 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
+      - name: Set Backend Name
+        run: |
+          if [ -z "$BACKEND_SA" ]; then
+            echo "BACKEND_SA secret is empty. Generating default name."
+            SAFE_ENV=$(echo "${{ needs.determine-env.outputs.env_name }}" | tr -d '-')
+            SAFE_PROJ="alpinebot2"
+            BACKEND_SA="${SAFE_ENV}bkd${SAFE_PROJ}"
+            echo "Generated BACKEND_SA: $BACKEND_SA"
+            echo "BACKEND_SA=$BACKEND_SA" >> $GITHUB_ENV
+          fi
+
       - name: Terraform Init
         run: |
           terraform init \

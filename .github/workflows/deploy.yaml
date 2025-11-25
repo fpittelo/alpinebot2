@@ -61,6 +61,17 @@ jobs:
       - name: Bootstrap Terraform Backend
         run: |
           echo "Bootstrapping Terraform Backend..."
+
+          # Set default Storage Account name if secret is empty
+          if [ -z "$BACKEND_SA" ]; then
+            echo "BACKEND_SA secret is empty. Generating default name."
+            # Remove hyphens from env name and project name for SA name compliance
+            SAFE_ENV=$(echo "${{ needs.determine-env.outputs.env_name }}" | tr -d '-')
+            SAFE_PROJ="alpinebot2" # Hardcoded or derived, keeping simple for now
+            BACKEND_SA="${SAFE_ENV}bkd${SAFE_PROJ}"
+            echo "Generated BACKEND_SA: $BACKEND_SA"
+            echo "BACKEND_SA=$BACKEND_SA" >> $GITHUB_ENV
+          fi
           
           # Create Resource Group
           if [ $(az group exists --name $BACKEND_RG) = false ]; then

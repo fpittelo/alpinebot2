@@ -12,6 +12,16 @@ on:
         - dev
         - qa
         - main
+      deploy_backend:
+        description: "Deploy Remote Backend"
+        required: false
+        type: boolean
+        default: false
+      deploy_infra:
+        description: "Deploy infrastructure"
+        required: false
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -58,6 +68,7 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Bootstrap Terraform Backend
+        if: ${{ github.event.inputs.deploy_backend == 'true' }}
         run: |
           echo "Bootstrapping Terraform Backend..."
 
@@ -105,10 +116,20 @@ jobs:
           fi
 
       - name: Setup Terraform
+        if: ${{ github.event.inputs.deploy_infra == 'true' }}
         uses: hashicorp/setup-terraform@v3
 
       - name: Terraform Init
+        if: ${{ github.event.inputs.deploy_infra == 'true' }}
         run: |
+          # Ensure BACKEND_SA is set for init even if bootstrap didn't run
+          if [ -z "$BACKEND_SA" ]; then
+             SAFE_ENV=$(echo "${{ needs.determine-env.outputs.env_name }}" | tr -d '-')
+             SAFE_PROJ="alpinebot2"
+             BACKEND_SA="${SAFE_ENV}bkd${SAFE_PROJ}"
+             echo "BACKEND_SA=$BACKEND_SA" >> $GITHUB_ENV
+          fi
+
           terraform init \
             -backend-config="resource_group_name=$BACKEND_RG" \
             -backend-config="storage_account_name=$BACKEND_SA" \
@@ -116,7 +137,9 @@ jobs:
             -backend-config="key=$BACKEND_KEY"
 
       - name: Terraform Plan
+        if: ${{ github.event.inputs.deploy_infra == 'true' }}
         run: terraform plan -input=false -var="environment=${{ needs.determine-env.outputs.env_name }}" -out=tfplan
 
       - name: Terraform Apply
+        if: ${{ github.event.inputs.deploy_infra == 'true' }}
         run: terraform apply -auto-approve -input=false tfplan

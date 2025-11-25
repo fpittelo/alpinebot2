@@ -1,0 +1,122 @@
+name: Deploy Infrastructure
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+        - dev
+        - qa
+        - main
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  determine-env:
+    runs-on: ubuntu-latest
+    outputs:
+      env_name: ${{ github.event.inputs.environment }}
+    steps:
+      - run: echo "Deploying to ${{ github.event.inputs.environment }}"
+
+  terraform-deploy:
+    name: 'Terraform Deploy'
+    needs: determine-env
+    runs-on: ubuntu-latest
+    environment: ${{ needs.determine-env.outputs.env_name }}
+    defaults:
+      run:
+        working-directory: ./infra
+
+    env:
+      ARM_USE_OIDC: true
+      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      # Backend configuration
+      # Assumes these secrets/vars are available in the Environment
+      BACKEND_RG: "${{ needs.determine-env.outputs.env_name }}-bkd-alpinebot-2"
+      BACKEND_SA: ${{ secrets.TF_BACKEND_STORAGE_ACCOUNT }}
+      BACKEND_CONTAINER: "tfstate"
+      BACKEND_KEY: "terraform.tfstate"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Bootstrap Terraform Backend
+        run: |
+          echo "Bootstrapping Terraform Backend..."
+
+          # Set default Storage Account name if secret is empty
+          if [ -z "$BACKEND_SA" ]; then
+            echo "BACKEND_SA secret is empty. Generating default name."
+            # Remove hyphens from env name and project name for SA name compliance
+            SAFE_ENV=$(echo "${{ needs.determine-env.outputs.env_name }}" | tr -d '-')
+            SAFE_PROJ="alpinebot2" # Hardcoded or derived, keeping simple for now
+            BACKEND_SA="${SAFE_ENV}bkd${SAFE_PROJ}"
+            echo "Generated BACKEND_SA: $BACKEND_SA"
+            echo "BACKEND_SA=$BACKEND_SA" >> $GITHUB_ENV
+          fi
+          
+          # Create Resource Group
+          if [ $(az group exists --name $BACKEND_RG) = false ]; then
+            echo "Creating Resource Group: $BACKEND_RG"
+            az group create --name $BACKEND_RG --location "switzerlandnorth"
+          else
+            echo "Resource Group $BACKEND_RG already exists."
+          fi
+
+          # Create Storage Account
+          # Check if storage account exists
+          SA_EXISTS=$(az storage account list --resource-group $BACKEND_RG --query "[?name=='$BACKEND_SA'] | length(@)")
+          if [ "$SA_EXISTS" -eq 0 ]; then
+            echo "Creating Storage Account: $BACKEND_SA"
+            az storage account create --name $BACKEND_SA --resource-group $BACKEND_RG --location "switzerlandnorth" --sku Standard_LRS --encryption-services blob
+          else
+            echo "Storage Account $BACKEND_SA already exists."
+          fi
+
+          # Create Blob Container
+          # Get Storage Account Key (needed for container creation if not using RBAC, but we are logged in as SP so we can use auth mode login)
+          # Using --auth-mode login requires Storage Blob Data Contributor role, which the SP might not have yet on the new SA.
+          # Using key for simplicity in bootstrap.
+          KEY=$(az storage account keys list --resource-group $BACKEND_RG --account-name $BACKEND_SA --query '[0].value' -o tsv)
+          
+          CONTAINER_EXISTS=$(az storage container exists --name $BACKEND_CONTAINER --account-name $BACKEND_SA --account-key $KEY --query exists)
+          if [ "$CONTAINER_EXISTS" = "false" ]; then
+            echo "Creating Blob Container: $BACKEND_CONTAINER"
+            az storage container create --name $BACKEND_CONTAINER --account-name $BACKEND_SA --account-key $KEY
+          else
+            echo "Blob Container $BACKEND_CONTAINER already exists."
+          fi
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=$BACKEND_RG" \
+            -backend-config="storage_account_name=$BACKEND_SA" \
+            -backend-config="container_name=$BACKEND_CONTAINER" \
+            -backend-config="key=$BACKEND_KEY"
+
+      - name: Terraform Plan
+        run: terraform plan -input=false -var="environment=${{ needs.determine-env.outputs.env_name }}" -out=tfplan
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve -input=false tfplan

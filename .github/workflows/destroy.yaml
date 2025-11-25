@@ -94,6 +94,17 @@ jobs:
         if: ${{ github.event.inputs.destroy_infra == 'true' }}
         run: terraform destroy -auto-approve -input=false -var="environment=${{ needs.determine-env.outputs.env_name }}"
 
+      - name: Delete Infrastructure Resource Group
+        if: ${{ always() && github.event.inputs.destroy_infra == 'true' }}
+        run: |
+          RG_NAME="${{ needs.determine-env.outputs.env_name }}-alpinebot-2"
+          echo "Deleting Infrastructure Resource Group: $RG_NAME"
+          if [ $(az group exists --name $RG_NAME) = true ]; then
+            az group delete --name $RG_NAME --yes --no-wait
+          else
+            echo "Resource Group $RG_NAME does not exist."
+          fi
+
       - name: Delete Terraform Backend
         if: ${{ always() && github.event.inputs.destroy_backend == 'true' }}
         run: |

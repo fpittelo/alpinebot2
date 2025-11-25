@@ -13,10 +13,13 @@ terraform {
   }
 
   # Backend configuration will be supplied via -backend-config in CI/CD
-  backend "azurerm" {}
+  backend "azurerm" {
+    use_oidc = true
+  }
 }
 
 provider "azurerm" {
+  use_oidc = true
   features {
     key_vault {
       purge_soft_delete_on_destroy = true

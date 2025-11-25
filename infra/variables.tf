@@ -78,3 +78,27 @@ variable "redis_sku_name" {
   type        = string
   default     = "Basic"
 }
+
+variable "openai_sku_name" {
+  description = "The SKU name of the Azure OpenAI service."
+  type        = string
+  default     = "S0"
+}
+
+variable "openai_model_name" {
+  description = "The name of the OpenAI model to deploy."
+  type        = string
+  default     = "gpt-4o"
+}
+
+variable "openai_model_version" {
+  description = "The version of the OpenAI model to deploy."
+  type        = string
+  default     = "2024-05-13"
+}
+
+variable "openai_deployment_name" {
+  description = "The name of the OpenAI deployment."
+  type        = string
+  default     = "gpt-4o"
+}

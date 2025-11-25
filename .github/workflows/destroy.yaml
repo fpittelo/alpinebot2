@@ -1,0 +1,92 @@
+name: Destroy Infrastructure
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  determine-env:
+    runs-on: ubuntu-latest
+    outputs:
+      env_name: ${{ steps.set-env.outputs.env_name }}
+    steps:
+      - id: set-env
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "env_name=main" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == "refs/heads/qa" ]]; then
+            echo "env_name=qa" >> $GITHUB_OUTPUT
+          else
+            echo "env_name=dev" >> $GITHUB_OUTPUT
+          fi
+
+  terraform-destroy:
+    name: 'Terraform Destroy'
+    needs: determine-env
+    runs-on: ubuntu-latest
+    environment: ${{ needs.determine-env.outputs.env_name }}
+    defaults:
+      run:
+        working-directory: ./infra
+
+    env:
+      ARM_USE_OIDC: true
+      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      # Backend configuration
+      BACKEND_RG: "${{ needs.determine-env.outputs.env_name }}-bkd-alpinebot-2"
+      BACKEND_SA: ${{ secrets.TF_BACKEND_STORAGE_ACCOUNT }}
+      BACKEND_CONTAINER: "tfstate"
+      BACKEND_KEY: "terraform.tfstate"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Set Backend Name
+        run: |
+          if [ -z "$BACKEND_SA" ]; then
+            echo "BACKEND_SA secret is empty. Generating default name."
+            SAFE_ENV=$(echo "${{ needs.determine-env.outputs.env_name }}" | tr -d '-')
+            SAFE_PROJ="alpinebot2"
+            BACKEND_SA="${SAFE_ENV}bkd${SAFE_PROJ}"
+            echo "Generated BACKEND_SA: $BACKEND_SA"
+            echo "BACKEND_SA=$BACKEND_SA" >> $GITHUB_ENV
+          fi
+
+      - name: Terraform Init
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=$BACKEND_RG" \
+            -backend-config="storage_account_name=$BACKEND_SA" \
+            -backend-config="container_name=$BACKEND_CONTAINER" \
+            -backend-config="key=$BACKEND_KEY"
+
+      - name: Terraform Destroy
+        run: terraform destroy -auto-approve -input=false -var="environment=${{ needs.determine-env.outputs.env_name }}"
+
+      - name: Delete Terraform Backend
+        if: always()
+        run: |
+          echo "Deleting Terraform Backend..."
+          # Delete the Resource Group containing the backend storage
+          if [ $(az group exists --name $BACKEND_RG) = true ]; then
+            echo "Deleting Resource Group: $BACKEND_RG"
+            az group delete --name $BACKEND_RG --yes --no-wait
+          else
+            echo "Resource Group $BACKEND_RG does not exist."
+          fi

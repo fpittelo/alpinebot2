@@ -111,10 +111,14 @@ Three strictly isolated environments:
 | Feature                | Dev                 | QA                  | Main (Prod)                   |
 | :--------------------- | :------------------ | :------------------ | :---------------------------- |
 | **Branch**             | `dev`               | `qa`                | `main`                        |
-| **Trigger**            | Push to `dev`       | Manual Dispatch     | Manual Dispatch (Release Tag) |
+| **Trigger**            | Manual Dispatch     | Manual Dispatch     | Manual Dispatch (Release Tag) |
 | **App Resource Group** | `dev-alpinebot`     | `qa-alpinebot`      | `main-alpinebot`              |
 | **TF Backend RG**      | `dev-bkd-alpinebot` | `qa-bkd-alpinebot`  | `main-bkd-alpinebot`          |
 | **Data**               | Mock/Synthetic      | Anonymized Snapshot | Real Data                     |
+
+### 6.3 Pipeline strategy
+
+- **Pipelines:** Must be modular and allow to deploy only the changed part: terraform remote backend, alpinebot infrastructure, alpinebot frontend, alpinebot backend, alpinebot functions, alpinebot monitoring.
 
 ## 7. Monitoring & Operations
 

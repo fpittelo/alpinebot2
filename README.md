@@ -72,6 +72,8 @@ We take our environments seriously. No yodeling in the library.
 
 ### 🔄 DevOps Pipeline
 
+> 🛑 **No Local Deployments:** Nothing is built or deployed locally. All infrastructure and code changes are executed exclusively via GitHub Actions.
+
 ```mermaid
 graph TD
     subgraph "Development Flow"

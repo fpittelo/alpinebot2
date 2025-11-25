@@ -1,10 +1,17 @@
 name: Deploy Infrastructure
 
 on:
-  push:
-    branches:
-      - dev
   workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+        - dev
+        - qa
+        - main
 
 permissions:
   contents: read
@@ -14,20 +21,12 @@ jobs:
   determine-env:
     runs-on: ubuntu-latest
     outputs:
-      env_name: ${{ steps.set-env.outputs.env_name }}
+      env_name: ${{ github.event.inputs.environment }}
     steps:
-      - id: set-env
-        run: |
-          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            echo "env_name=main" >> $GITHUB_OUTPUT
-          elif [[ "${{ github.ref }}" == "refs/heads/qa" ]]; then
-            echo "env_name=qa" >> $GITHUB_OUTPUT
-          else
-            echo "env_name=dev" >> $GITHUB_OUTPUT
-          fi
+      - run: echo "Deploying to ${{ github.event.inputs.environment }}"
 
-  terraform:
-    name: 'Terraform'
+  terraform-deploy:
+    name: 'Terraform Deploy'
     needs: determine-env
     runs-on: ubuntu-latest
     environment: ${{ needs.determine-env.outputs.env_name }}
@@ -120,5 +119,4 @@ jobs:
         run: terraform plan -input=false -var="environment=${{ needs.determine-env.outputs.env_name }}" -out=tfplan
 
       - name: Terraform Apply
-        if: github.ref == 'refs/heads/dev' || github.event_name == 'workflow_dispatch'
         run: terraform apply -auto-approve -input=false tfplan

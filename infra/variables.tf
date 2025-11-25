@@ -42,3 +42,39 @@ variable "purge_protection_enabled" {
   type        = bool
   default     = false
 }
+
+variable "postgres_version" {
+  description = "The version of PostgreSQL to use."
+  type        = string
+  default     = "16"
+}
+
+variable "postgres_storage_mb" {
+  description = "The storage capacity of the PostgreSQL server in MB."
+  type        = number
+  default     = 32768
+}
+
+variable "postgres_sku" {
+  description = "The SKU name of the PostgreSQL server."
+  type        = string
+  default     = "B_Standard_B1ms"
+}
+
+variable "redis_capacity" {
+  description = "The size of the Redis cache to deploy."
+  type        = number
+  default     = 0
+}
+
+variable "redis_family" {
+  description = "The SKU family/pricing group to use."
+  type        = string
+  default     = "C"
+}
+
+variable "redis_sku_name" {
+  description = "The SKU of Redis to use."
+  type        = string
+  default     = "Basic"
+}

@@ -136,15 +136,15 @@ Three strictly isolated environments:
 ### 8.1 Pages
 
 - **Home:**
-  - A simple publicly accessible landing login page with a Google login button.
+  - A publicly accessible landing login page with a Google login button.
   - Each access requires an explicit login.
-  - Designe is minimalist and Swiss.
+  - Designe is minimalist, elegant and Swiss.
   - The page is responsive.
   - The page is mobile first.
-  - The firs login is logged in the user profile.
+  - The first login is logged in the user profile.
   - The last login is logged in the user profile.
 - **Chat:** A secure chat interface for authenticated users.
-  - The chat interface is minimalist and Swiss.
+  - The chat interface is minimalist, elegant and Swiss.
   - The chat interface is responsive.
   - The chat interface is mobile first.
   - A logout button is available top right. Logout send the user to the home page.

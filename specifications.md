@@ -92,7 +92,7 @@ To solve the issue of managing dynamic secrets between Web App, Functions, and O
 
 ### 6.1 IaC & CI/CD
 
-- **IaC:** Terraform (State stored in Azure Storage Account). Nothing is built locally.
+- **IaC:** Terraform (State stored in Azure Storage Account). Nothing is built locally on local PC.
 - **CI/CD:** GitHub Actions.
 - **Repository Strategy:** Monorepo (Frontend/Backend/Infra in one repo).
 

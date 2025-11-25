@@ -11,7 +11,7 @@ resource "azurerm_key_vault" "main" {
 
   sku_name = var.key_vault_sku
 
-  enable_rbac_authorization = true
+  rbac_authorization_enabled = true
 
   tags = merge(var.tags, { Environment = var.environment })
 }

@@ -67,3 +67,15 @@ jobs:
 
       - name: Terraform Destroy
         run: terraform destroy -auto-approve -input=false -var="environment=${{ needs.determine-env.outputs.env_name }}"
+
+      - name: Delete Terraform Backend
+        if: always()
+        run: |
+          echo "Deleting Terraform Backend..."
+          # Delete the Resource Group containing the backend storage
+          if [ $(az group exists --name $BACKEND_RG) = true ]; then
+            echo "Deleting Resource Group: $BACKEND_RG"
+            az group delete --name $BACKEND_RG --yes --no-wait
+          else
+            echo "Resource Group $BACKEND_RG does not exist."
+          fi

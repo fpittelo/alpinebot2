@@ -118,3 +118,41 @@ Three strictly isolated environments:
 ### 7.2 Health Checks
 
 - **Requirement:** Web service app must have a simple `/health` endpoint checked every 5 minutes to ensure uptime.
+
+## 8. Website
+
+### 8.1 Pages
+
+- **Home:**
+  - A simple publicly accessible landing login page with a Google login button.
+  - Each access requires an explicit login.
+  - Designe is minimalist and Swiss.
+  - The page is responsive.
+  - The page is mobile first.
+  - The firs login is logged in the user profile.
+  - The last login is logged in the user profile.
+- **Chat:** A secure chat interface for authenticated users.
+  - The chat interface is minimalist and Swiss.
+  - The chat interface is responsive.
+  - The chat interface is mobile first.
+  - A logout button is available top right. Logout send the user to the home page.
+  - The Google profile picture is displayed at the left of the logout button.
+  - On mouse hover the Google profile name is displayed.
+  - A maximum of 100 Chat interaction are historized in the user profile
+  - Allow to vote for the best answers.
+  - Copy the chat to clipboard. Refresh the chat to clear the chat
+  - Below the chat box a a warning tell Alpinbot can make mistakes and veryfy the answer.
+- **Admin portal:**
+  - Displays the total vote and the percentage of good vs bad vote.
+  - Allow to manage Llm models and prompts to improve the chat experience.
+  - Allow to manage data ingestion.
+  - Allow to manage audit logs
+- **Privacy:** A publicly available privacy policy page.
+- **About:** An publicly available about page.
+- **Contact:** A publicly available contact page.
+- **Guidelines:** A publicly available guidelines page.
+- **User Profile:** A user profile page for authenticated users.
+  - A maximum of 100 Chat interaction are historized in the user profile
+  - All interaction can be deleted by the user individually or in bulk
+  - The user profile is accessible from the chat interface.
+  - The user cans delete its profile and all its interaction.

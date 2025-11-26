@@ -14,4 +14,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Infrastructure as Code setup with Terraform.
 - **Security**: Implemented VNet integration for PostgreSQL database (Issue #17).
 - **Fix**: Updated OpenAI model version for Switzerland North region (Issue #15).
+- **Fix**: Corrected Storage Account naming convention to remove invalid characters (Issue #25).
 - **Docs**: Updated architecture documentation to reflect network security changes.

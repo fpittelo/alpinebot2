@@ -1,5 +1,5 @@
 resource "azurerm_storage_account" "func" {
-  name                     = "${var.environment}stfunc${var.project_name}"
+  name                     = "${var.environment}stfunc${replace(var.project_name, "-", "")}"
   resource_group_name      = azurerm_resource_group.rg.name
   location                 = var.location
   account_tier             = "Standard"

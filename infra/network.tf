@@ -25,6 +25,21 @@ resource "azurerm_subnet" "postgres" {
   }
 }
 
+resource "azurerm_subnet" "function" {
+  name                 = "function-subnet"
+  resource_group_name  = azurerm_resource_group.rg.name
+  virtual_network_name = azurerm_virtual_network.main.name
+  address_prefixes     = ["10.0.2.0/24"]
+
+  delegation {
+    name = "function-delegation"
+    service_delegation {
+      name    = "Microsoft.Web/serverFarms"
+      actions = ["Microsoft.Network/virtualNetworks/subnets/action"]
+    }
+  }
+}
+
 resource "azurerm_private_dns_zone" "postgres" {
   name                = "${var.environment}.postgres.database.azure.com"
   resource_group_name = azurerm_resource_group.rg.name

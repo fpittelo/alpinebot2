@@ -1,2 +1,6 @@
 azure-functions
 azure-identity
+azure-keyvault-secrets
+openai
+psycopg2-binary
+pgvector

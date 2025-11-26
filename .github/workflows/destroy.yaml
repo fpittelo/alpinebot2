@@ -105,6 +105,15 @@ jobs:
             echo "Resource Group $RG_NAME does not exist."
           fi
 
+      - name: Purge Key Vault
+        if: ${{ always() && github.event.inputs.destroy_infra == 'true' }}
+        run: |
+          KV_NAME="${{ needs.determine-env.outputs.env_name }}-kv-alpinebot-2"
+          LOCATION="switzerlandnorth"
+          echo "Purging Key Vault: $KV_NAME in $LOCATION"
+          # Attempt to purge the key vault if it exists in soft-delete
+          az keyvault purge --name $KV_NAME --location $LOCATION --no-wait || echo "Key Vault not found or could not be purged"
+
       - name: Delete Terraform Backend
         if: ${{ always() && github.event.inputs.destroy_backend == 'true' }}
         run: |

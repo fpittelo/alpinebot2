@@ -4,7 +4,7 @@
 
 AlpineBot.ch is a minimalist, AI-powered platform providing up-to-date information about Switzerland. It features a public-facing portal, a secure chat interface, and an administrative backend. The system utilizes RAG (Retrieval-Augmented Generation) to ground AI responses in specific Swiss data.
 
-**Target Architecture:** Cloud-Native PaaS on Azure (Switzerland North).
+**Target Architecture:** Cloud-Native PaaS on Azure (Switzerland North). **VNet Integrated** for enhanced security.
 
 **Compliance:** Swiss FADP (nLPD) / GDPR alignment via strictly local hosting and privacy-first design.
 
@@ -60,6 +60,7 @@ graph TD
 - **Primary Database:** Azure Database for PostgreSQL - Flexible Server.
   - **SKU:** Burstable B1ms (Cheapest instance, ~1 vCore, 2GB RAM).
   - **Extension:** pgvector (Enables vector similarity search within Postgres, removing need for Azure AI Search).
+  - **Network:** VNet Integrated (Subnet delegation), Public Access Disabled.
 - **Caching:** Azure Cache for Redis (Basic C0 Tier).
 - **Secrets:** Azure Key Vault (Standard).
 

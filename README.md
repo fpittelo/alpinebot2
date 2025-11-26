@@ -10,7 +10,7 @@ AlpineBot is a RAG (Retrieval-Augmented Generation) system that combines the pow
 
 ## 🏗️ Architecture (The Technical Summit)
 
-We've built this on a cloud-native PaaS architecture hosted right here in **Azure Switzerland North**. Because data privacy is as important to us as banking secrecy used to be. 😉
+We've built this on a cloud-native PaaS architecture hosted right here in **Azure Switzerland North**. Because data privacy is as important to us as banking secrecy used to be. 😉 We use **VNet Integration** to ensure our data stays safe and sound.
 
 ### The Stack 🥞
 

@@ -8,7 +8,7 @@ resource "azurerm_linux_web_app" "frontend" {
     application_stack {
       node_version = "22-lts"
     }
-    app_command_line = "pm2-runtime start /home/site/wwwroot/ecosystem.config.js"
+    app_command_line = "node /home/site/wwwroot/server.js"
   }
 
   app_settings = {

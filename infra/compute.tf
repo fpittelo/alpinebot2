@@ -45,6 +45,8 @@ resource "azurerm_linux_function_app" "main" {
     "ENABLE_ORYX_BUILD"              = "true"
     "SCM_DO_BUILD_DURING_DEPLOYMENT" = "true"
     "PYTHON_ENABLE_WORKER_EXTENSIONS" = "1"
+    "KEY_VAULT_NAME"                 = azurerm_key_vault.main.name
+    "AZURE_OPENAI_ENDPOINT"          = azurerm_cognitive_account.openai.endpoint
   }
 
   tags = merge(var.tags, { Environment = var.environment })

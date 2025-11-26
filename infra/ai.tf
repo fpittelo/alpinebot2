@@ -22,3 +22,9 @@ resource "azurerm_cognitive_deployment" "gpt_4o" {
     capacity = 10 # Tokens per minute limit (thousands), adjust as needed
   }
 }
+
+resource "azurerm_role_assignment" "function_openai" {
+  scope                = azurerm_cognitive_account.openai.id
+  role_definition_name = "Cognitive Services User"
+  principal_id         = azurerm_linux_function_app.main.identity[0].principal_id
+}

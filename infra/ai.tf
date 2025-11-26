@@ -23,8 +23,9 @@ resource "azurerm_cognitive_deployment" "gpt_4o" {
   }
 }
 
-resource "azurerm_role_assignment" "function_openai" {
-  scope                = azurerm_cognitive_account.openai.id
-  role_definition_name = "Cognitive Services User"
-  principal_id         = azurerm_linux_function_app.main.identity[0].principal_id
+resource "azurerm_key_vault_secret" "openai_key" {
+  name         = "openai-api-key"
+  value        = azurerm_cognitive_account.openai.primary_access_key
+  key_vault_id = azurerm_key_vault.main.id
+  depends_on   = [azurerm_key_vault_access_policy.client]
 }

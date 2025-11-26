@@ -2,7 +2,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || process.env.WEBSITES_PORT || 3000;
 const root = __dirname;
 
 const mimeTypes = {
@@ -70,7 +70,8 @@ const server = http.createServer((req, res) => {
   });
 });
 
-server.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}/`);
+server.listen(port, '0.0.0.0', () => {
+  console.log(`Server running at http://0.0.0.0:${port}/`);
   console.log(`Serving files from ${root}`);
+  console.log(`Environment PORT: ${process.env.PORT}, WEBSITES_PORT: ${process.env.WEBSITES_PORT}`);
 });

@@ -94,7 +94,7 @@ variable "openai_model_name" {
 variable "openai_model_version" {
   description = "The version of the OpenAI model to deploy."
   type        = string
-  default     = "2024-05-13"
+  default     = "2024-11-20"
 }
 
 variable "openai_deployment_name" {

@@ -15,6 +15,12 @@ resource "azurerm_postgresql_flexible_server" "main" {
   sku_name               = var.postgres_sku
   zone                   = "1"
 
+  delegated_subnet_id           = azurerm_subnet.postgres.id
+  private_dns_zone_id           = azurerm_private_dns_zone.postgres.id
+  public_network_access_enabled = false
+
+  depends_on = [azurerm_private_dns_zone_virtual_network_link.postgres]
+
   tags = merge(var.tags, { Environment = var.environment })
 }
 
@@ -32,13 +38,7 @@ resource "azurerm_postgresql_flexible_server_configuration" "extensions" {
   value     = "vector"
 }
 
-# Allow access from Azure services
-resource "azurerm_postgresql_flexible_server_firewall_rule" "allow_azure" {
-  name             = "allow-azure"
-  server_id        = azurerm_postgresql_flexible_server.main.id
-  start_ip_address = "0.0.0.0"
-  end_ip_address   = "0.0.0.0"
-}
+# Firewall rule removed as we are using VNet integration
 
 resource "azurerm_redis_cache" "main" {
   name                = "${var.environment}-redis-${var.project_name}"

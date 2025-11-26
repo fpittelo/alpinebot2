@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
 - Initial project structure based on technical specifications.
 - Documentation: README, CONTRIBUTING, CHANGELOG.
 - CI/CD configuration for GitHub Actions.
@@ -16,4 +17,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Fix**: Updated OpenAI model version for Switzerland North region (Issue #15).
 - **Fix**: Corrected Storage Account naming convention to remove invalid characters (Issue #25).
 - **Fix**: Resolved Frontend 404 error by correcting startup command to `pm2 serve` (Issue #26).
+- **Fix**: Switched OpenAI authentication to Key Vault Secret to resolve RBAC permission error (Issue #33).
 - **Docs**: Updated architecture documentation to reflect network security changes.

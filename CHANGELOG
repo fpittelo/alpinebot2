@@ -19,5 +19,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Fix**: Resolved Frontend 404 error by correcting startup command to `pm2 serve` (Issue #26).
 - **Fix**: Switched OpenAI authentication to Key Vault Secret to resolve RBAC permission error (Issue #33).
 - **Fix**: Resolved Port mismatch in Web App by correcting `pm2 serve` syntax (Issue #32).
-- **Fix**: Resolved 504 Gateway Timeout by switching to `pm2-runtime` and moving `ecosystem.config.js` to `public` folder.
+- **Fix**: Resolved 504 Gateway Timeout by replacing `pm2 serve` with a custom zero-dependency `server.js` for reliable SPA serving.
 - **Docs**: Updated architecture documentation to reflect network security changes.

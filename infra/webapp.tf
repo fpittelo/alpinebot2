@@ -6,7 +6,7 @@ resource "azurerm_linux_web_app" "frontend" {
 
   site_config {
     application_stack {
-      node_version = "24-lts"
+      node_version = "22-lts"
     }
     app_command_line = "npx serve -s dist"
   }

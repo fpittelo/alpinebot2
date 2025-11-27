@@ -17,6 +17,7 @@ resource "azurerm_linux_function_app" "main" {
   storage_account_access_key = azurerm_storage_account.func.primary_access_key
   service_plan_id            = var.service_plan_id
 
+  app_settings = {
     "BUILD_FLAGS"                     = "UseExpressBuild"
     "ENABLE_ORYX_BUILD"               = "true"
     "SCM_DO_BUILD_DURING_DEPLOYMENT"  = "true"

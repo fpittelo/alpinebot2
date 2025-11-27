@@ -3,12 +3,12 @@ name: Destroy Infrastructure
 on:
   workflow_dispatch:
     inputs:
-      destroy_infra:
+      destroy_infrastructure:
         description: "Destroy infrastructure"
         required: false
         type: boolean
         default: true
-      destroy_backend:
+      destroy_tf_state:
         description: "Destroy Remote Backend"
         required: false
         type: boolean
@@ -66,11 +66,11 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Setup Terraform
-        if: ${{ github.event.inputs.destroy_infra == 'true' }}
+        if: ${{ github.event.inputs.destroy_infrastructure == 'true' }}
         uses: hashicorp/setup-terraform@v3
 
       - name: Set Backend Name
-        if: ${{ github.event.inputs.destroy_infra == 'true' || github.event.inputs.destroy_backend == 'true' }}
+        if: ${{ github.event.inputs.destroy_infrastructure == 'true' || github.event.inputs.destroy_tf_state == 'true' }}
         run: |
           if [ -z "$BACKEND_SA" ]; then
             echo "BACKEND_SA secret is empty. Generating default name."
@@ -82,7 +82,7 @@ jobs:
           fi
 
       - name: Terraform Init
-        if: ${{ github.event.inputs.destroy_infra == 'true' }}
+        if: ${{ github.event.inputs.destroy_infrastructure == 'true' }}
         run: |
           terraform init \
             -backend-config="resource_group_name=$BACKEND_RG" \
@@ -91,11 +91,11 @@ jobs:
             -backend-config="key=$BACKEND_KEY"
 
       - name: Terraform Destroy
-        if: ${{ github.event.inputs.destroy_infra == 'true' }}
+        if: ${{ github.event.inputs.destroy_infrastructure == 'true' }}
         run: terraform destroy -auto-approve -input=false -var="environment=${{ needs.determine-env.outputs.env_name }}"
 
       - name: Delete Infrastructure Resource Group
-        if: ${{ always() && github.event.inputs.destroy_infra == 'true' }}
+        if: ${{ always() && github.event.inputs.destroy_infrastructure == 'true' }}
         run: |
           RG_NAME="${{ needs.determine-env.outputs.env_name }}-alpinebot-2"
           echo "Deleting Infrastructure Resource Group: $RG_NAME"
@@ -106,7 +106,7 @@ jobs:
           fi
 
       - name: Purge Key Vault
-        if: ${{ always() && github.event.inputs.destroy_infra == 'true' }}
+        if: ${{ always() && github.event.inputs.destroy_infrastructure == 'true' }}
         run: |
           KV_NAME="${{ needs.determine-env.outputs.env_name }}-kv-alpinebot-2"
           LOCATION="switzerlandnorth"
@@ -115,7 +115,7 @@ jobs:
           az keyvault purge --name $KV_NAME --location $LOCATION --no-wait || echo "Key Vault not found or could not be purged"
 
       - name: Delete Terraform Backend
-        if: ${{ always() && github.event.inputs.destroy_backend == 'true' }}
+        if: ${{ always() && github.event.inputs.destroy_tf_state == 'true' }}
         run: |
           echo "Deleting Terraform Backend..."
           # Delete the Resource Group containing the backend storage

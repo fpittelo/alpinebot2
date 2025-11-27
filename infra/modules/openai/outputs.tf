@@ -5,3 +5,7 @@ output "openai_endpoint" {
 output "openai_key_secret_id" {
   value = azurerm_key_vault_secret.openai_key.id
 }
+
+output "openai_id" {
+  value = azurerm_cognitive_account.openai.id
+}

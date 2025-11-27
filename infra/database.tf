@@ -72,8 +72,4 @@ moved {
   to   = module.redis.azurerm_key_vault_secret.redis_connection_string
 }
 
-resource "azurerm_key_vault_secret" "redis_connection_string" {
-  name         = "redis-connection-string"
-  value        = azurerm_redis_cache.main.primary_connection_string
-  key_vault_id = module.security.key_vault_id
-}
+

@@ -232,6 +232,10 @@ jobs:
           pushd frontend
           npm install
           npm run build
+          # Prepare dist for production deployment
+          cd dist
+          npm init -y
+          npm install express
           popd
 
       - name: Azure Login

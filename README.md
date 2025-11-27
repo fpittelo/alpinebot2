@@ -84,16 +84,16 @@ The deployment pipeline consists of 4 distinct stages:
 ```mermaid
 graph TD
     subgraph "Deployment Pipeline"
-        Start[Trigger] --> Stage1[1. Deploy Backend (TF State)]
-        Stage1 --> Stage2[2. Deploy Infrastructure]
-        Stage2 --> Stage3[3. Deploy App Backend]
-        Stage3 --> Stage4[4. Deploy App Frontend]
+        Start[Trigger] --> Stage1["1. Deploy Backend (TF State)"]
+        Stage1 --> Stage2["2. Deploy Infrastructure"]
+        Stage2 --> Stage3["3. Deploy App Backend"]
+        Stage3 --> Stage4["4. Deploy App Frontend"]
     end
 
-    Stage1 -.->|Bootstraps| TFState[Azure Storage (TF State)]
-    Stage2 -.->|Deploys| Infra[Azure Resources (KV, DB, VNet)]
-    Stage3 -.->|Deploys| Func[Azure Functions]
-    Stage4 -.->|Deploys| WebApp[Azure Web App]
+    Stage1 -.->|Bootstraps| TFState["Azure Storage (TF State)"]
+    Stage2 -.->|Deploys| Infra["Azure Resources (KV, DB, VNet)"]
+    Stage3 -.->|Deploys| Func["Azure Functions"]
+    Stage4 -.->|Deploys| WebApp["Azure Web App"]
 ```
 
 ## 🤝 Contributing

@@ -26,6 +26,5 @@ resource "azurerm_cognitive_deployment" "gpt_4o" {
 resource "azurerm_key_vault_secret" "openai_key" {
   name         = "openai-api-key"
   value        = azurerm_cognitive_account.openai.primary_access_key
-  key_vault_id = azurerm_key_vault.main.id
-  depends_on   = [azurerm_key_vault_access_policy.client]
+  key_vault_id = module.security.key_vault_id
 }

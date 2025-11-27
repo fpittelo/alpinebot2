@@ -45,7 +45,7 @@ resource "azurerm_linux_function_app" "main" {
     "ENABLE_ORYX_BUILD"              = "true"
     "SCM_DO_BUILD_DURING_DEPLOYMENT" = "true"
     "PYTHON_ENABLE_WORKER_EXTENSIONS" = "1"
-    "KEY_VAULT_NAME"                 = azurerm_key_vault.main.name
+    "KEY_VAULT_NAME"                 = module.security.key_vault_name
     "AZURE_OPENAI_ENDPOINT"          = azurerm_cognitive_account.openai.endpoint
     "AZURE_OPENAI_API_KEY"           = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.openai_key.id})"
   }

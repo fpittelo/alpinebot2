@@ -1,54 +1,39 @@
-resource "azurerm_storage_account" "func" {
-  name                     = "${var.environment}stfunc${replace(var.project_name, "-", "")}"
-  resource_group_name      = azurerm_resource_group.rg.name
-  location                 = var.location
-  account_tier             = "Standard"
-  account_replication_type = "LRS"
+module "service_plan" {
+  source = "./modules/service_plan"
 
-  tags = merge(var.tags, { Environment = var.environment })
+  project_name        = var.project_name
+  environment         = var.environment
+  location            = var.location
+  resource_group_name = azurerm_resource_group.rg.name
+  tags                = var.tags
 }
 
-resource "azurerm_service_plan" "main" {
-  name                = "${var.environment}-asp-${var.project_name}"
-  resource_group_name = azurerm_resource_group.rg.name
-  location            = var.location
-  os_type             = "Linux"
-  sku_name            = "B1"
-
-  tags = merge(var.tags, { Environment = var.environment })
+moved {
+  from = azurerm_service_plan.main
+  to   = module.service_plan.azurerm_service_plan.main
 }
 
-resource "azurerm_linux_function_app" "main" {
-  name                = "${var.environment}-func-${var.project_name}"
-  resource_group_name = azurerm_resource_group.rg.name
-  location            = var.location
+module "function_app" {
+  source = "./modules/function_app"
 
-  storage_account_name       = azurerm_storage_account.func.name
-  storage_account_access_key = azurerm_storage_account.func.primary_access_key
-  service_plan_id            = azurerm_service_plan.main.id
+  project_name         = var.project_name
+  environment          = var.environment
+  location             = var.location
+  resource_group_name  = azurerm_resource_group.rg.name
+  service_plan_id      = module.service_plan.service_plan_id
+  subnet_id            = module.virtual_network.function_subnet_id
+  key_vault_name       = module.security.key_vault_name
+  openai_endpoint      = module.openai.openai_endpoint
+  openai_key_secret_id = module.openai.openai_key_secret_id
+  tags                 = var.tags
+}
 
-  site_config {
-    application_stack {
-      python_version = "3.11"
-    }
-    vnet_route_all_enabled = true
-  }
+moved {
+  from = azurerm_storage_account.func
+  to   = module.function_app.azurerm_storage_account.func
+}
 
-  virtual_network_subnet_id = azurerm_subnet.function.id
-
-  identity {
-    type = "SystemAssigned"
-  }
-
-  app_settings = {
-    "BUILD_FLAGS"                    = "UseExpressBuild"
-    "ENABLE_ORYX_BUILD"              = "true"
-    "SCM_DO_BUILD_DURING_DEPLOYMENT" = "true"
-    "PYTHON_ENABLE_WORKER_EXTENSIONS" = "1"
-    "KEY_VAULT_NAME"                 = azurerm_key_vault.main.name
-    "AZURE_OPENAI_ENDPOINT"          = azurerm_cognitive_account.openai.endpoint
-    "AZURE_OPENAI_API_KEY"           = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.openai_key.id})"
-  }
-
-  tags = merge(var.tags, { Environment = var.environment })
+moved {
+  from = azurerm_linux_function_app.main
+  to   = module.function_app.azurerm_linux_function_app.main
 }

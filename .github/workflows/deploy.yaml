@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Environment to deploy to'
+        description: 'Deploy Environment'
         required: true
         default: 'dev'
         type: choice
@@ -12,16 +12,21 @@ on:
         - dev
         - qa
         - main
-      deploy_backend:
-        description: "Deploy Remote Backend"
-        required: false
-        type: boolean
-        default: false
       deploy_infra:
-        description: "Deploy infrastructure"
+        description: "Deploy Infrastructure"
         required: false
         type: boolean
         default: true
+      deploy_backend:
+        description: "Deploy Backend"
+        required: false
+        type: boolean
+        default: false
+      deploy_frontend:
+        description: "Deploy Frontend"
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -40,6 +45,7 @@ jobs:
     needs: determine-env
     runs-on: ubuntu-latest
     environment: ${{ needs.determine-env.outputs.env_name }}
+    if: ${{ github.event.inputs.deploy_infra == 'true' }}
     defaults:
       run:
         working-directory: ./infra
@@ -68,7 +74,7 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Bootstrap Terraform Backend
-        if: ${{ github.event.inputs.deploy_backend == 'true' }}
+        if: ${{ github.event.inputs.deploy_infra == 'true' }}
         run: |
           echo "Bootstrapping Terraform Backend..."
 
@@ -116,11 +122,9 @@ jobs:
           fi
 
       - name: Setup Terraform
-        if: ${{ github.event.inputs.deploy_infra == 'true' }}
         uses: hashicorp/setup-terraform@v3
 
       - name: Terraform Init
-        if: ${{ github.event.inputs.deploy_infra == 'true' }}
         run: |
           # Ensure BACKEND_SA is set for init even if bootstrap didn't run
           if [ -z "$BACKEND_SA" ]; then
@@ -137,19 +141,17 @@ jobs:
             -backend-config="key=$BACKEND_KEY"
 
       - name: Terraform Plan
-        if: ${{ github.event.inputs.deploy_infra == 'true' }}
         run: terraform plan -input=false -var="environment=${{ needs.determine-env.outputs.env_name }}" -out=tfplan
 
       - name: Terraform Apply
-        if: ${{ github.event.inputs.deploy_infra == 'true' }}
         run: terraform apply -auto-approve -input=false tfplan
 
   deploy-backend:
     name: 'Deploy Backend'
     needs: [determine-env, terraform-deploy]
+    if: ${{ always() && (needs.terraform-deploy.result == 'success' || needs.terraform-deploy.result == 'skipped') && github.event.inputs.deploy_backend == 'true' }}
     runs-on: ubuntu-latest
     environment: ${{ needs.determine-env.outputs.env_name }}
-    if: ${{ github.event.inputs.deploy_backend == 'true' || github.event.inputs.deploy_infra == 'true' }} # Deploy if infra changed or explicitly requested
 
     steps:
       - name: Checkout
@@ -184,9 +186,9 @@ jobs:
   deploy-frontend:
     name: 'Deploy Frontend'
     needs: [determine-env, terraform-deploy]
+    if: ${{ always() && (needs.terraform-deploy.result == 'success' || needs.terraform-deploy.result == 'skipped') && github.event.inputs.deploy_frontend == 'true' }}
     runs-on: ubuntu-latest
     environment: ${{ needs.determine-env.outputs.env_name }}
-    if: ${{ github.event.inputs.deploy_infra == 'true' }} # Assuming frontend deploy is tied to infra or needs its own input, simplified for now
 
     steps:
       - name: Checkout

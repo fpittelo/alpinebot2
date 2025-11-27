@@ -1,6 +1,6 @@
-azure-functions
-azure-identity
-azure-keyvault-secrets
-openai
-psycopg2-binary
-pgvector
+azure-functions>=1.19.0,<2.0.0
+azure-identity>=1.16.0,<2.0.0
+azure-keyvault-secrets>=4.10.0,<5.0.0
+openai>=2.8.0,<3.0.0
+psycopg2-binary>=2.9.0,<3.0.0
+pgvector>=0.4.0,<0.5.0

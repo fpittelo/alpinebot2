@@ -37,7 +37,8 @@ const Chat = () => {
         userMessage
       ];
 
-      const response = await fetch('/api/chat', {
+      const apiUrl = (import.meta.env.VITE_API_URL || '') + '/api/chat';
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

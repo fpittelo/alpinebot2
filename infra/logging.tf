@@ -1,17 +1,20 @@
-resource "azurerm_log_analytics_workspace" "main" {
-  name                = "${var.environment}-log-${var.project_name}"
+module "logging" {
+  source = "./modules/logging"
+
+  project_name        = var.project_name
+  environment         = var.environment
   location            = var.location
   resource_group_name = azurerm_resource_group.rg.name
-  sku                 = "PerGB2018"
-  retention_in_days   = var.log_retention_days
-  tags                = merge(var.tags, { Environment = var.environment })
+  log_retention_days  = var.log_retention_days
+  tags                = var.tags
 }
 
-resource "azurerm_application_insights" "main" {
-  name                = "${var.environment}-appi-${var.project_name}"
-  location            = var.location
-  resource_group_name = azurerm_resource_group.rg.name
-  workspace_id        = azurerm_log_analytics_workspace.main.id
-  application_type    = "web"
-  tags                = merge(var.tags, { Environment = var.environment })
+moved {
+  from = azurerm_log_analytics_workspace.main
+  to   = module.logging.azurerm_log_analytics_workspace.main
+}
+
+moved {
+  from = azurerm_application_insights.main
+  to   = module.logging.azurerm_application_insights.main
 }

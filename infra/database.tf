@@ -1,79 +1,75 @@
-resource "random_password" "postgres_password" {
-  length           = 32
-  special          = true
-  override_special = "!#$%&*()-_=+[]{}<>:?"
+module "postgresql" {
+  source = "./modules/postgresql"
+
+  project_name        = var.project_name
+  environment         = var.environment
+  location            = var.location
+  resource_group_name = azurerm_resource_group.rg.name
+  postgres_version    = var.postgres_version
+  postgres_storage_mb = var.postgres_storage_mb
+  postgres_sku        = var.postgres_sku
+  delegated_subnet_id = module.virtual_network.postgres_subnet_id
+  private_dns_zone_id = module.virtual_network.private_dns_zone_id
+  key_vault_id        = module.security.key_vault_id
+  tags                = var.tags
+
+
 }
 
-resource "azurerm_postgresql_flexible_server" "main" {
-  name                   = "${var.environment}-psql-${var.project_name}"
-  resource_group_name    = azurerm_resource_group.rg.name
-  location               = var.location
-  version                = var.postgres_version
-  administrator_login    = "psqladmin"
-  administrator_password = random_password.postgres_password.result
-  storage_mb             = var.postgres_storage_mb
-  sku_name               = var.postgres_sku
-  zone                   = "1"
-
-  delegated_subnet_id           = azurerm_subnet.postgres.id
-  private_dns_zone_id           = azurerm_private_dns_zone.postgres.id
-  public_network_access_enabled = false
-
-  depends_on = [azurerm_private_dns_zone_virtual_network_link.postgres]
-
-  tags = merge(var.tags, { Environment = var.environment })
+moved {
+  from = random_password.postgres_password
+  to   = module.postgresql.random_password.postgres_password
 }
 
-resource "azurerm_postgresql_flexible_server_database" "main" {
-  name      = "alpinebot_db"
-  server_id = azurerm_postgresql_flexible_server.main.id
-  collation = "en_US.utf8"
-  charset   = "utf8"
+moved {
+  from = azurerm_postgresql_flexible_server.main
+  to   = module.postgresql.azurerm_postgresql_flexible_server.main
 }
 
-# Enable pgvector extension
-resource "azurerm_postgresql_flexible_server_configuration" "extensions" {
-  name      = "azure.extensions"
-  server_id = azurerm_postgresql_flexible_server.main.id
-  value     = "vector"
+moved {
+  from = azurerm_postgresql_flexible_server_database.main
+  to   = module.postgresql.azurerm_postgresql_flexible_server_database.main
+}
+
+moved {
+  from = azurerm_postgresql_flexible_server_configuration.extensions
+  to   = module.postgresql.azurerm_postgresql_flexible_server_configuration.extensions
+}
+
+moved {
+  from = azurerm_key_vault_secret.postgres_password
+  to   = module.postgresql.azurerm_key_vault_secret.postgres_password
+}
+
+moved {
+  from = azurerm_key_vault_secret.postgres_connection_string
+  to   = module.postgresql.azurerm_key_vault_secret.postgres_connection_string
 }
 
 # Firewall rule removed as we are using VNet integration
 
-resource "azurerm_redis_cache" "main" {
-  name                = "${var.environment}-redis-${var.project_name}"
+module "redis" {
+  source = "./modules/redis"
+
+  project_name        = var.project_name
+  environment         = var.environment
   location            = var.location
   resource_group_name = azurerm_resource_group.rg.name
-  capacity            = var.redis_capacity
-  family              = var.redis_family
-  sku_name            = var.redis_sku_name
-  non_ssl_port_enabled = false
-  minimum_tls_version = "1.2"
-
-  redis_configuration {
-  }
-
-  tags = merge(var.tags, { Environment = var.environment })
+  redis_capacity      = var.redis_capacity
+  redis_family        = var.redis_family
+  redis_sku_name      = var.redis_sku_name
+  key_vault_id        = module.security.key_vault_id
+  tags                = var.tags
 }
 
-# Store secrets in Key Vault
-resource "azurerm_key_vault_secret" "postgres_password" {
-  name         = "postgres-admin-password"
-  value        = random_password.postgres_password.result
-  key_vault_id = azurerm_key_vault.main.id
-  depends_on   = [azurerm_key_vault_access_policy.client]
+moved {
+  from = azurerm_redis_cache.main
+  to   = module.redis.azurerm_redis_cache.main
 }
 
-resource "azurerm_key_vault_secret" "postgres_connection_string" {
-  name         = "postgres-connection-string"
-  value        = "host=${azurerm_postgresql_flexible_server.main.fqdn} port=5432 dbname=${azurerm_postgresql_flexible_server_database.main.name} user=${azurerm_postgresql_flexible_server.main.administrator_login} password=${random_password.postgres_password.result} sslmode=require"
-  key_vault_id = azurerm_key_vault.main.id
-  depends_on   = [azurerm_key_vault_access_policy.client]
+moved {
+  from = azurerm_key_vault_secret.redis_connection_string
+  to   = module.redis.azurerm_key_vault_secret.redis_connection_string
 }
 
-resource "azurerm_key_vault_secret" "redis_connection_string" {
-  name         = "redis-connection-string"
-  value        = azurerm_redis_cache.main.primary_connection_string
-  key_vault_id = azurerm_key_vault.main.id
-  depends_on   = [azurerm_key_vault_access_policy.client]
-}
+

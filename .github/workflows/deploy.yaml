@@ -236,6 +236,7 @@ jobs:
           cd dist
           npm init -y
           npm install express
+          ls -R
           popd
 
       - name: Azure Login

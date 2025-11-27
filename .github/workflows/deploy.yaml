@@ -41,6 +41,7 @@ jobs:
   deploy-tf-state:
     name: 'Deploy Backend (TF State)'
     runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
     outputs:
       env_name: ${{ github.event.inputs.environment }}
     env:

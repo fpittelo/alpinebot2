@@ -8,12 +8,12 @@ module "postgresql" {
   postgres_version    = var.postgres_version
   postgres_storage_mb = var.postgres_storage_mb
   postgres_sku        = var.postgres_sku
-  delegated_subnet_id = azurerm_subnet.postgres.id
-  private_dns_zone_id = azurerm_private_dns_zone.postgres.id
+  delegated_subnet_id = module.virtual_network.postgres_subnet_id
+  private_dns_zone_id = module.virtual_network.private_dns_zone_id
   key_vault_id        = module.security.key_vault_id
   tags                = var.tags
 
-  depends_on = [azurerm_private_dns_zone_virtual_network_link.postgres]
+
 }
 
 moved {

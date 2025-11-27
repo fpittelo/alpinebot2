@@ -16,7 +16,7 @@ module "function_app" {
   location             = var.location
   resource_group_name  = azurerm_resource_group.rg.name
   service_plan_id      = azurerm_service_plan.main.id
-  subnet_id            = azurerm_subnet.function.id
+  subnet_id            = module.virtual_network.function_subnet_id
   key_vault_name       = module.security.key_vault_name
   openai_endpoint      = module.openai.openai_endpoint
   openai_key_secret_id = module.openai.openai_key_secret_id

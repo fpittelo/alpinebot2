@@ -164,11 +164,11 @@ jobs:
             -backend-config="key=$BACKEND_KEY"
 
       - name: Terraform Plan
-        if: ${{ github.event.inputs.deploy_infra == 'true' }}
-        run: terraform plan -input=false -var="environment=${{ needs.determine-env.outputs.env_name }}" -out=tfplan
+        if: ${{ github.event.inputs.deploy_infrastructure == 'true' }}
+        run: terraform plan -input=false -var="environment=${{ needs.deploy-tf-state.outputs.env_name }}" -out=tfplan
 
       - name: Terraform Apply
-        if: ${{ github.event.inputs.deploy_infra == 'true' }}
+        if: ${{ github.event.inputs.deploy_infrastructure == 'true' }}
         run: terraform apply -auto-approve -input=false tfplan
 
   deploy-app-backend:

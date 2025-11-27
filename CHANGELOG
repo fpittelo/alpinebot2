@@ -21,3 +21,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Fix**: Resolved Port mismatch in Web App by correcting `pm2 serve` syntax (Issue #32).
 - **Fix**: Resolved 504 Gateway Timeout by replacing `pm2-runtime` with direct `node server.js` execution to simplify container startup.
 - **Docs**: Updated architecture documentation to reflect network security changes.
+- **Refactor**: Refactored CI/CD pipeline into 4 distinct stages (TF State, Infra, App Backend, App Frontend) for better modularity (Issue #48).
+- **Fix**: Resolved Service Principal error in TF State deployment by adding environment context (Issue #52).

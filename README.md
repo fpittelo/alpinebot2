@@ -14,7 +14,7 @@ We've built this on a cloud-native PaaS architecture hosted right here in **Azur
 
 ### The Stack 🥞
 
-- **Frontend**: React (Vite) or Next.js - Fast as a bobsled. 🛷
+- **Frontend**: React (Vite) - Fast as a bobsled. 🛷
 - **Backend**: Python 3.11+ on Azure Functions - Reliable as a Swiss Army Knife. 🛠️
 - **Database**: Azure Postgres with `pgvector` - Storing knowledge like gold bars. 🏦
 - **AI**: Azure OpenAI (GPT-4o) - Smart as a theoretical physicist in Bern. 🧠
@@ -74,28 +74,26 @@ We take our environments seriously. No yodeling in the library.
 
 > 🛑 **No Local Deployments:** Nothing is built or deployed locally. All infrastructure and code changes are executed exclusively via GitHub Actions.
 
+The deployment pipeline consists of 4 distinct stages:
+
+1.  **Deploy Backend (TF State)**: Bootstraps the Terraform backend (Storage Account & Resource Group).
+2.  **Deploy Infrastructure**: Deploys core Azure resources (Key Vault, Postgres, Networking, etc.) using Terraform.
+3.  **Deploy App Backend**: Deploys the Python Azure Functions.
+4.  **Deploy App Frontend**: Deploys the Node.js Web App.
+
 ```mermaid
 graph TD
-    subgraph "Development Flow"
-        Dev[Dev Branch] -->|Push| GHA_Dev[GitHub Actions: Dev]
-        GHA_Dev -->|Terraform Apply| Azure_Dev[Azure Dev Env]
-        GHA_Dev -->|Deploy Code| Azure_Dev
+    subgraph "Deployment Pipeline"
+        Start[Trigger] --> Stage1[1. Deploy Backend (TF State)]
+        Stage1 --> Stage2[2. Deploy Infrastructure]
+        Stage2 --> Stage3[3. Deploy App Backend]
+        Stage3 --> Stage4[4. Deploy App Frontend]
     end
 
-    subgraph "QA Flow"
-        QA[QA Branch] -->|Manual Dispatch| GHA_QA[GitHub Actions: QA]
-        GHA_QA -->|Terraform Apply| Azure_QA[Azure QA Env]
-        GHA_QA -->|Deploy Code| Azure_QA
-    end
-
-    subgraph "Production Flow"
-        Main[Main Branch] -->|Release Tag| GHA_Prod[GitHub Actions: Prod]
-        GHA_Prod -->|Terraform Apply| Azure_Prod[Azure Prod Env]
-        GHA_Prod -->|Deploy Code| Azure_Prod
-    end
-
-    Dev -.->|Merge Request| QA
-    QA -.->|Merge Request| Main
+    Stage1 -.->|Bootstraps| TFState[Azure Storage (TF State)]
+    Stage2 -.->|Deploys| Infra[Azure Resources (KV, DB, VNet)]
+    Stage3 -.->|Deploys| Func[Azure Functions]
+    Stage4 -.->|Deploys| WebApp[Azure Web App]
 ```
 
 ## 🤝 Contributing

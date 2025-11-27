@@ -46,8 +46,8 @@ resource "azurerm_linux_function_app" "main" {
     "SCM_DO_BUILD_DURING_DEPLOYMENT" = "true"
     "PYTHON_ENABLE_WORKER_EXTENSIONS" = "1"
     "KEY_VAULT_NAME"                 = module.security.key_vault_name
-    "AZURE_OPENAI_ENDPOINT"          = azurerm_cognitive_account.openai.endpoint
-    "AZURE_OPENAI_API_KEY"           = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.openai_key.id})"
+    "AZURE_OPENAI_ENDPOINT"          = module.openai.openai_endpoint
+    "AZURE_OPENAI_API_KEY"           = "@Microsoft.KeyVault(SecretUri=${module.openai.openai_key_secret_id})"
   }
 
   tags = merge(var.tags, { Environment = var.environment })

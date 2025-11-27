@@ -53,3 +53,11 @@ resource "azurerm_private_dns_zone_virtual_network_link" "postgres" {
   virtual_network_id    = azurerm_virtual_network.main.id
   resource_group_name   = azurerm_resource_group.rg.name
 }
+
+resource "azurerm_network_watcher" "main" {
+  name                = "NetworkWatcher_${lower(replace(var.location, " ", ""))}"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.rg.name
+
+  tags = merge(var.tags, { Environment = var.environment })
+}

@@ -48,29 +48,28 @@ moved {
 
 # Firewall rule removed as we are using VNet integration
 
-resource "azurerm_redis_cache" "main" {
-  name                = "${var.environment}-redis-${var.project_name}"
+module "redis" {
+  source = "./modules/redis"
+
+  project_name        = var.project_name
+  environment         = var.environment
   location            = var.location
   resource_group_name = azurerm_resource_group.rg.name
-  capacity            = var.redis_capacity
-  family              = var.redis_family
-  sku_name            = var.redis_sku_name
-  non_ssl_port_enabled = false
-  minimum_tls_version = "1.2"
-
-  redis_configuration {
-  }
-
-  tags = merge(var.tags, { Environment = var.environment })
+  redis_capacity      = var.redis_capacity
+  redis_family        = var.redis_family
+  redis_sku_name      = var.redis_sku_name
+  key_vault_id        = module.security.key_vault_id
+  tags                = var.tags
 }
 
-# Store secrets in Key Vault
-# Note: Postgres secrets moved to module
+moved {
+  from = azurerm_redis_cache.main
+  to   = module.redis.azurerm_redis_cache.main
+}
 
-resource "azurerm_key_vault_secret" "redis_connection_string" {
-  name         = "redis-connection-string"
-  value        = azurerm_redis_cache.main.primary_connection_string
-  key_vault_id = module.security.key_vault_id
+moved {
+  from = azurerm_key_vault_secret.redis_connection_string
+  to   = module.redis.azurerm_key_vault_secret.redis_connection_string
 }
 
 resource "azurerm_key_vault_secret" "redis_connection_string" {

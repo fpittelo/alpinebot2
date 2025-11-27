@@ -12,18 +12,23 @@ on:
         - dev
         - qa
         - main
+      deploy_remote_backend:
+        description: "Deploy Remote Backend (Bootstrap)"
+        required: false
+        type: boolean
+        default: false
       deploy_infra:
         description: "Deploy Infrastructure"
         required: false
         type: boolean
         default: true
       deploy_backend:
-        description: "Deploy Backend"
+        description: "Deploy Backend App"
         required: false
         type: boolean
         default: false
       deploy_frontend:
-        description: "Deploy Frontend"
+        description: "Deploy Frontend App"
         required: false
         type: boolean
         default: false
@@ -45,7 +50,7 @@ jobs:
     needs: determine-env
     runs-on: ubuntu-latest
     environment: ${{ needs.determine-env.outputs.env_name }}
-    if: ${{ github.event.inputs.deploy_infra == 'true' }}
+    if: ${{ github.event.inputs.deploy_infra == 'true' || github.event.inputs.deploy_remote_backend == 'true' }}
     defaults:
       run:
         working-directory: ./infra
@@ -74,7 +79,7 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Bootstrap Terraform Backend
-        if: ${{ github.event.inputs.deploy_infra == 'true' }}
+        if: ${{ github.event.inputs.deploy_remote_backend == 'true' }}
         run: |
           echo "Bootstrapping Terraform Backend..."
 
@@ -122,9 +127,11 @@ jobs:
           fi
 
       - name: Setup Terraform
+        if: ${{ github.event.inputs.deploy_infra == 'true' }}
         uses: hashicorp/setup-terraform@v3
 
       - name: Terraform Init
+        if: ${{ github.event.inputs.deploy_infra == 'true' }}
         run: |
           # Ensure BACKEND_SA is set for init even if bootstrap didn't run
           if [ -z "$BACKEND_SA" ]; then
@@ -141,9 +148,11 @@ jobs:
             -backend-config="key=$BACKEND_KEY"
 
       - name: Terraform Plan
+        if: ${{ github.event.inputs.deploy_infra == 'true' }}
         run: terraform plan -input=false -var="environment=${{ needs.determine-env.outputs.env_name }}" -out=tfplan
 
       - name: Terraform Apply
+        if: ${{ github.event.inputs.deploy_infra == 'true' }}
         run: terraform apply -auto-approve -input=false tfplan
 
   deploy-backend:

@@ -12,23 +12,23 @@ on:
         - dev
         - qa
         - main
-      deploy_remote_backend:
-        description: "Deploy Remote Backend (Bootstrap)"
+      deploy_tf_state:
+        description: "Deploy Backend (TF State)"
         required: false
         type: boolean
         default: false
-      deploy_infra:
+      deploy_infrastructure:
         description: "Deploy Infrastructure"
         required: false
         type: boolean
         default: true
-      deploy_backend:
-        description: "Deploy Backend App"
+      deploy_app_backend:
+        description: "Deploy App Backend"
         required: false
         type: boolean
         default: false
-      deploy_frontend:
-        description: "Deploy Frontend App"
+      deploy_app_frontend:
+        description: "Deploy App Frontend"
         required: false
         type: boolean
         default: false
@@ -38,40 +38,25 @@ permissions:
   id-token: write
 
 jobs:
-  determine-env:
+  deploy-tf-state:
+    name: 'Deploy Backend (TF State)'
     runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
     outputs:
       env_name: ${{ github.event.inputs.environment }}
+    env:
+      BACKEND_RG: "${{ github.event.inputs.environment }}-bkd-alpinebot-2"
+      BACKEND_SA: ${{ secrets.TF_BACKEND_STORAGE_ACCOUNT }}
+      BACKEND_CONTAINER: "tfstate"
     steps:
       - run: echo "Deploying to ${{ github.event.inputs.environment }}"
 
-  terraform-deploy:
-    name: 'Terraform Deploy'
-    needs: determine-env
-    runs-on: ubuntu-latest
-    environment: ${{ needs.determine-env.outputs.env_name }}
-    if: ${{ github.event.inputs.deploy_infra == 'true' || github.event.inputs.deploy_remote_backend == 'true' }}
-    defaults:
-      run:
-        working-directory: ./infra
-
-    env:
-      ARM_USE_OIDC: true
-      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-      # Backend configuration
-      # Assumes these secrets/vars are available in the Environment
-      BACKEND_RG: "${{ needs.determine-env.outputs.env_name }}-bkd-alpinebot-2"
-      BACKEND_SA: ${{ secrets.TF_BACKEND_STORAGE_ACCOUNT }}
-      BACKEND_CONTAINER: "tfstate"
-      BACKEND_KEY: "terraform.tfstate"
-
-    steps:
       - name: Checkout
+        if: ${{ github.event.inputs.deploy_tf_state == 'true' }}
         uses: actions/checkout@v4
 
       - name: Azure Login
+        if: ${{ github.event.inputs.deploy_tf_state == 'true' }}
         uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
@@ -79,7 +64,7 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Bootstrap Terraform Backend
-        if: ${{ github.event.inputs.deploy_remote_backend == 'true' }}
+        if: ${{ github.event.inputs.deploy_tf_state == 'true' }}
         run: |
           echo "Bootstrapping Terraform Backend..."
 
@@ -87,7 +72,7 @@ jobs:
           if [ -z "$BACKEND_SA" ]; then
             echo "BACKEND_SA secret is empty. Generating default name."
             # Remove hyphens from env name and project name for SA name compliance
-            SAFE_ENV=$(echo "${{ needs.determine-env.outputs.env_name }}" | tr -d '-')
+            SAFE_ENV=$(echo "${{ github.event.inputs.environment }}" | tr -d '-')
             SAFE_PROJ="alpinebot2" # Hardcoded or derived, keeping simple for now
             BACKEND_SA="${SAFE_ENV}bkd${SAFE_PROJ}"
             echo "Generated BACKEND_SA: $BACKEND_SA"
@@ -126,16 +111,47 @@ jobs:
             echo "Blob Container $BACKEND_CONTAINER already exists."
           fi
 
+  deploy-infrastructure:
+    name: 'Deploy Infrastructure'
+    needs: deploy-tf-state
+    runs-on: ubuntu-latest
+    environment: ${{ needs.deploy-tf-state.outputs.env_name }}
+    if: ${{ github.event.inputs.deploy_infrastructure == 'true' }}
+    defaults:
+      run:
+        working-directory: ./infra
+
+    env:
+      ARM_USE_OIDC: true
+      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      # Backend configuration
+      # Assumes these secrets/vars are available in the Environment
+      BACKEND_RG: "${{ needs.deploy-tf-state.outputs.env_name }}-bkd-alpinebot-2"
+      BACKEND_SA: ${{ secrets.TF_BACKEND_STORAGE_ACCOUNT }}
+      BACKEND_CONTAINER: "tfstate"
+      BACKEND_KEY: "terraform.tfstate"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
       - name: Setup Terraform
-        if: ${{ github.event.inputs.deploy_infra == 'true' }}
         uses: hashicorp/setup-terraform@v3
 
       - name: Terraform Init
-        if: ${{ github.event.inputs.deploy_infra == 'true' }}
         run: |
           # Ensure BACKEND_SA is set for init even if bootstrap didn't run
           if [ -z "$BACKEND_SA" ]; then
-             SAFE_ENV=$(echo "${{ needs.determine-env.outputs.env_name }}" | tr -d '-')
+             SAFE_ENV=$(echo "${{ needs.deploy-tf-state.outputs.env_name }}" | tr -d '-')
              SAFE_PROJ="alpinebot2"
              BACKEND_SA="${SAFE_ENV}bkd${SAFE_PROJ}"
              echo "BACKEND_SA=$BACKEND_SA" >> $GITHUB_ENV
@@ -148,19 +164,19 @@ jobs:
             -backend-config="key=$BACKEND_KEY"
 
       - name: Terraform Plan
-        if: ${{ github.event.inputs.deploy_infra == 'true' }}
-        run: terraform plan -input=false -var="environment=${{ needs.determine-env.outputs.env_name }}" -out=tfplan
+        if: ${{ github.event.inputs.deploy_infrastructure == 'true' }}
+        run: terraform plan -input=false -var="environment=${{ needs.deploy-tf-state.outputs.env_name }}" -out=tfplan
 
       - name: Terraform Apply
-        if: ${{ github.event.inputs.deploy_infra == 'true' }}
+        if: ${{ github.event.inputs.deploy_infrastructure == 'true' }}
         run: terraform apply -auto-approve -input=false tfplan
 
-  deploy-backend:
-    name: 'Deploy Backend'
-    needs: [determine-env, terraform-deploy]
-    if: ${{ always() && (needs.terraform-deploy.result == 'success' || needs.terraform-deploy.result == 'skipped') && github.event.inputs.deploy_backend == 'true' }}
+  deploy-app-backend:
+    name: 'Deploy App Backend'
+    needs: [deploy-tf-state, deploy-infrastructure]
+    if: ${{ always() && (needs.deploy-infrastructure.result == 'success' || needs.deploy-infrastructure.result == 'skipped') && github.event.inputs.deploy_app_backend == 'true' }}
     runs-on: ubuntu-latest
-    environment: ${{ needs.determine-env.outputs.env_name }}
+    environment: ${{ needs.deploy-tf-state.outputs.env_name }}
 
     steps:
       - name: Checkout
@@ -187,17 +203,17 @@ jobs:
       - name: Deploy to Azure Functions
         uses: Azure/functions-action@v1
         with:
-          app-name: "${{ needs.determine-env.outputs.env_name }}-func-alpinebot-2"
+          app-name: "${{ needs.deploy-tf-state.outputs.env_name }}-func-alpinebot-2"
           package: './backend'
           scm-do-build-during-deployment: true
           enable-oryx-build: true
 
-  deploy-frontend:
-    name: 'Deploy Frontend'
-    needs: [determine-env, terraform-deploy]
-    if: ${{ always() && (needs.terraform-deploy.result == 'success' || needs.terraform-deploy.result == 'skipped') && github.event.inputs.deploy_frontend == 'true' }}
+  deploy-app-frontend:
+    name: 'Deploy App Frontend'
+    needs: [deploy-tf-state, deploy-app-backend]
+    if: ${{ always() && (needs.deploy-app-backend.result == 'success' || needs.deploy-app-backend.result == 'skipped') && github.event.inputs.deploy_app_frontend == 'true' }}
     runs-on: ubuntu-latest
-    environment: ${{ needs.determine-env.outputs.env_name }}
+    environment: ${{ needs.deploy-tf-state.outputs.env_name }}
 
     steps:
       - name: Checkout
@@ -225,5 +241,5 @@ jobs:
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
         with:
-          app-name: "${{ needs.determine-env.outputs.env_name }}-app-alpinebot-2"
+          app-name: "${{ needs.deploy-tf-state.outputs.env_name }}-app-alpinebot-2"
           package: './frontend/dist'

@@ -43,7 +43,7 @@ graph TD
 
 ### 3.1 Frontend (Presentation Layer)
 
-- **Framework:** React (Vite) or Next.js (Static Export preferred for cost/performance).
+- **Framework:** React (Vite).
 - **Hosting:** Azure App Service (Linux Plan).
 - **Styling:** Tailwind CSS (Minimalist/Swiss design principles).
 - **State Management:** React Query (TanStack Query) for API interactions.
@@ -119,7 +119,11 @@ Three strictly isolated environments:
 
 ### 6.3 Pipeline strategy
 
-- **Pipelines:** Must be modular and allow to deploy only the changed part: terraform remote backend, alpinebot infrastructure, alpinebot frontend, alpinebot backend, alpinebot functions, alpinebot monitoring.
+- **Pipelines:** Modular pipeline with 4 distinct stages, allowing selective deployment:
+  1.  **Deploy Backend (TF State):** Bootstraps Terraform state storage.
+  2.  **Deploy Infrastructure:** Deploys Azure resources via Terraform.
+  3.  **Deploy App Backend:** Deploys Azure Functions (Python).
+  4.  **Deploy App Frontend:** Deploys Web App (Node.js).
 
 ## 7. Monitoring & Operations
 

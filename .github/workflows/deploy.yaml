@@ -225,10 +225,18 @@ jobs:
           node-version: '22'
 
       - name: Install and Build
+        env:
+          VITE_API_URL: "https://${{ needs.deploy-tf-state.outputs.env_name }}-func-alpinebot-2.azurewebsites.net"
+          VITE_GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
         run: |
           pushd frontend
           npm install
           npm run build
+          # Prepare dist for production deployment
+          cd dist
+          npm init -y
+          npm install express
+          ls -R
           popd
 
       - name: Azure Login

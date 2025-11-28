@@ -17,15 +17,6 @@ resource "azurerm_linux_function_app" "main" {
   storage_account_access_key = azurerm_storage_account.func.primary_access_key
   service_plan_id            = var.service_plan_id
 
-  site_config {
-    application_stack {
-      python_version = "3.11"
-    }
-    vnet_route_all_enabled = true
-  }
-
-  virtual_network_subnet_id = var.subnet_id
-
   identity {
     type = "SystemAssigned"
   }
@@ -38,6 +29,18 @@ resource "azurerm_linux_function_app" "main" {
     "KEY_VAULT_NAME"                  = var.key_vault_name
     "AZURE_OPENAI_ENDPOINT"           = var.openai_endpoint
     "AZURE_OPENAI_API_KEY"            = "@Microsoft.KeyVault(SecretUri=${var.openai_key_secret_id})"
+    "AZURE_OPENAI_DEPLOYMENT_NAME"    = "gpt-4o"
+  }
+
+  site_config {
+    application_stack {
+      python_version = "3.11"
+    }
+    vnet_route_all_enabled = true
+    cors {
+      allowed_origins = ["https://${var.environment}-app-${var.project_name}.azurewebsites.net", "http://localhost:5173"]
+      support_credentials = true
+    }
   }
 
   tags = merge(var.tags, { Environment = var.environment })
